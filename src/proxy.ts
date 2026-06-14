@@ -1,28 +1,26 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getToken } from "next-auth/jwt"
 
 export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl
 
-  const token = await getToken({
-    req,
-    secret: process.env.AUTH_SECRET ?? "r6dwtAOSQqXvGLn40vJ+kM9xrrNdPdN2yQF+l1F6T8Q=",
-  })
+  const sessionCookie =
+    req.cookies.get("authjs.session-token") ??
+    req.cookies.get("__Secure-authjs.session-token") ??
+    req.cookies.get("next-auth.session-token") ??
+    req.cookies.get("__Secure-next-auth.session-token")
 
-  const isLoggedIn = !!token
-  const role = token?.role as string | undefined
+  const isLoggedIn = !!sessionCookie
 
-  if (pathname.startsWith("/admin") && role !== "ADMIN") {
-    return NextResponse.redirect(new URL("/login", req.url))
+  if ((pathname === "/login" || pathname === "/register") && isLoggedIn) {
+    return NextResponse.redirect(new URL("/dashboard", req.url))
   }
 
   if (pathname.startsWith("/dashboard") && !isLoggedIn) {
     return NextResponse.redirect(new URL("/login", req.url))
   }
 
-  if ((pathname === "/login" || pathname === "/register") && isLoggedIn) {
-    const redirect = role === "ADMIN" ? "/admin/dashboard" : "/dashboard"
-    return NextResponse.redirect(new URL(redirect, req.url))
+  if (pathname.startsWith("/admin") && !isLoggedIn) {
+    return NextResponse.redirect(new URL("/login", req.url))
   }
 
   return NextResponse.next()
