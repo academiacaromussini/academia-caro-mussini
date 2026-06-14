@@ -34,8 +34,8 @@ export default function LoginPage() {
 
     const meRes = await fetch("/api/auth/session")
     const session = await meRes.json()
-    router.push(session?.user?.role === "ADMIN" ? "/admin/dashboard" : "/dashboard")
-    router.refresh()
+    const dest = session?.user?.role === "ADMIN" ? "/admin/dashboard" : "/dashboard"
+    window.location.href = dest
   }
 
   return (
